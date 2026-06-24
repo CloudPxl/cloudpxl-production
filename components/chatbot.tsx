@@ -2,41 +2,96 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, X, Send } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
 
 interface Message {
   role: 'bot' | 'user'
   text: string
 }
 
+// Updated, friendly greeting
 const GREETING =
-  'Hello. I can analyze your multi-tenant product requirements and route you to our senior engineers. What are you building?'
+  "Hi there! I'm the CloudPxl assistant. Let me know what you're looking to build, or feel free to ask me any questions about how we work."
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([{ role: 'bot', text: GREETING }])
   const [input, setInput] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const send = () => {
+  const send = async () => {
     const text = input.trim()
     if (!text) return
-    setMessages((m) => [...m, { role: 'user', text }])
+
+    const newMessages = [...messages, { role: 'user', text }]
+    setMessages(newMessages as Message[])
     setInput('')
-    // Auto-reply
-    setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        {
-          role: 'bot',
-          text: "Thanks for sharing that. I'll route your requirements to our senior architecture team. You can also complete the quote form above for a faster response.",
-        },
-      ])
-    }, 900)
+    setIsTyping(true)
+
+    try {
+      const apiMessages = newMessages.map(m => ({ 
+        role: m.role === 'bot' ? 'assistant' : 'user', 
+        content: m.text 
+      }))
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: apiMessages }),
+      })
+
+      if (!res.body) throw new Error('No response body')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = '' // The buffer fixes the chopped-JSON bug
+      
+      setMessages((m) => [...m, { role: 'bot', text: '' }])
+      setIsTyping(false)
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith('data: ')) continue
+          
+          const message = trimmed.replace(/^data: /, '')
+          if (message === '[DONE]') break
+
+          try {
+            const parsed = JSON.parse(message)
+            const token = parsed.choices[0]?.delta?.content || ''
+            
+            if (token) {
+              setMessages((m) => {
+                const all = [...m]
+                const last = all.length - 1
+                all[last] = { ...all[last], text: all[last].text + token }
+                return all
+              })
+            }
+          } catch (e) {
+            // Silently ignore malformed chunks, the buffer will catch the rest on the next pass
+          }
+        }
+      }
+    } catch (error) {
+      setMessages((m) => [...m, { role: 'bot', text: 'Connection interrupted. Please try again.' }])
+      setIsTyping(false)
+    }
   }
 
   return (
@@ -49,10 +104,10 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="w-[340px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-[rgba(10,10,10,0.08)] overflow-hidden"
+            className="w-[340px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-[rgba(10,10,10,0.08)] overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="bg-[#0818A8] px-5 py-4 flex items-center justify-between">
+            <div className="bg-[#0818A8] px-5 py-4 flex items-center justify-between shrink-0">
               <div>
                 <p className="text-white font-bold text-sm">CloudPxl AI Architect</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -70,14 +125,14 @@ export default function Chatbot() {
             </div>
 
             {/* Messages */}
-            <div className="h-64 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+            <div className="h-80 overflow-y-auto px-4 py-4 flex flex-col gap-4">
               {messages.map((msg, i) => (
                 <div
                   key={i}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                       msg.role === 'user'
                         ? 'bg-[#0818A8] text-white rounded-br-sm'
                         : 'bg-[rgba(10,10,10,0.05)] text-[#0A0A0A] rounded-bl-sm'
@@ -87,25 +142,34 @@ export default function Chatbot() {
                   </div>
                 </div>
               ))}
-              <div ref={bottomRef} />
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-[rgba(10,10,10,0.05)] text-[#0A0A0A]/50 rounded-2xl rounded-bl-sm px-4 py-2.5">
+                    <Loader2 size={16} className="animate-spin" />
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} className="h-1" />
             </div>
 
             {/* Input */}
-            <div className="px-4 pb-4">
-              <div className="flex items-center gap-2 border border-[rgba(10,10,10,0.12)] rounded-xl px-3 py-2.5 focus-within:border-[#0818A8] focus-within:ring-2 focus-within:ring-[#0818A8]/10 transition-all">
+            <div className="px-4 pb-4 pt-2 border-t border-[rgba(10,10,10,0.05)] shrink-0 bg-white">
+              <div className="flex items-center gap-2 border border-[rgba(10,10,10,0.12)] rounded-xl px-3 py-2.5 focus-within:border-[#0818A8] focus-within:ring-2 focus-within:ring-[#0818A8]/10 transition-all bg-white">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && send()}
-                  placeholder="Describe your project…"
-                  className="flex-1 text-sm text-[#0A0A0A] bg-transparent outline-none placeholder:text-[#0A0A0A]/35"
+                  onKeyDown={(e) => e.key === 'Enter' && !isTyping && send()}
+                  placeholder="Ask a question..."
+                  disabled={isTyping}
+                  className="flex-1 text-sm text-[#0A0A0A] bg-transparent outline-none placeholder:text-[#0A0A0A]/40 disabled:opacity-50"
                 />
                 <button
                   onClick={send}
-                  className="text-[#0818A8] hover:scale-110 transition-transform"
+                  disabled={isTyping || !input.trim()}
+                  className="text-[#0818A8] hover:scale-110 transition-transform disabled:opacity-30 disabled:hover:scale-100"
                   aria-label="Send message"
                 >
-                  <Send size={15} />
+                  <Send size={16} />
                 </button>
               </div>
             </div>

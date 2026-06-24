@@ -1,31 +1,34 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-// Routes that do NOT require authentication
-const PUBLIC_ROUTES = ['/login']
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  })
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const isAuthenticated = request.cookies.get('cpxl_session')?.value === '1'
-
-  // Allow public routes through unconditionally
-  if (PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
-    // If already authenticated and hitting /login, redirect to the app
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/', request.url))
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+        },
+      },
     }
-    return NextResponse.next()
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Protect the root if not logged in
+  if (!user && request.nextUrl.pathname !== '/login') {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Protect everything else — redirect unauthenticated visitors to /login
-  if (!isAuthenticated) {
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|api|assets|logo|cloud-hero|.*\\..*).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

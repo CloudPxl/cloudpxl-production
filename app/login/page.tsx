@@ -1,36 +1,57 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
+// Added signInWithOAuth to the imports here
+import { login, signup, resetPassword, signInWithOAuth } from "./actions"
 
 const HYPERBLUE = "#0818A8"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentView, setCurrentView] = useState<"login" | "register" | "forgot">("login")
 
-  function handleAuth() {
-    // Set a session cookie (expires in 7 days) then navigate to the app
-    document.cookie = "cpxl_session=1; path=/; max-age=604800; SameSite=Lax"
-    router.push("/")
+  // Added states for database communication
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // This replaces the fake handleAuth function
+  async function clientAction(formData: FormData) {
+    setIsLoading(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    try {
+      if (currentView === "login") {
+        const res = await login(formData)
+        if (res?.error) setErrorMessage(res.error)
+      } else if (currentView === "register") {
+        const res = await signup(formData)
+        if (res?.error) setErrorMessage(res.error)
+        if (res?.success) setSuccessMessage(res.success)
+      } else if (currentView === "forgot") {
+        const res = await resetPassword(formData)
+        if (res?.error) setErrorMessage(res.error)
+        if (res?.success) setSuccessMessage(res.success)
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen flex font-sans">
-
       {/* ── Left panel ── */}
       <div
         className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
         style={{ backgroundColor: HYPERBLUE }}
       >
-        {/* Technical grid overlay */}
         <div
           className="absolute inset-0 z-0"
           style={{
@@ -41,14 +62,12 @@ export default function LoginPage() {
         />
 
         <div className="relative z-10 flex flex-col justify-between w-full px-12 py-12">
-          {/* Logo */}
           <a href="/" className="flex items-center gap-3 w-fit">
             <span className="text-xl font-black tracking-tighter text-white select-none">
               Cloud<span className="text-white/60">Pxl</span>
             </span>
           </a>
 
-          {/* Hero copy */}
           <div className="flex-1 flex flex-col justify-center">
             <h2 className="text-4xl font-semibold text-white mb-6 leading-tight text-balance">
               Security is not a feature &mdash; it&apos;s the foundation.
@@ -58,7 +77,6 @@ export default function LoginPage() {
               manage concurrent workflows, and scale your infrastructure with zero ambiguity.
             </p>
 
-            {/* Trust badges */}
             <div className="mt-10 flex flex-wrap gap-3">
               {["SOC 2 Type II", "GDPR Ready", "End-to-End Encrypted", "99.99% SLA"].map((badge) => (
                 <span
@@ -71,7 +89,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="text-white/40 text-xs">
             <span>Copyright &copy; 2026 CloudPxl &bull; End-to-end encryption at rest and in transit</span>
           </div>
@@ -80,7 +97,6 @@ export default function LoginPage() {
 
       {/* ── Right panel ── */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#F7F7F3]">
-        {/* Graph-paper grid background */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -91,21 +107,18 @@ export default function LoginPage() {
         />
 
         <div className="relative w-full max-w-md">
-          {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <a href="/" className="text-xl font-black tracking-tighter text-[#0A0A0A]">
               Cloud<span style={{ color: HYPERBLUE }}>Pxl</span>
             </a>
           </div>
 
-          {/* Form card */}
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-black/5 space-y-6">
-
-            {/* Heading */}
             <div className="space-y-2 text-center relative">
               {currentView === "forgot" && (
                 <Button
                   variant="ghost"
+                  type="button"
                   onClick={() => setCurrentView("login")}
                   className="absolute -left-2 -top-2 p-2 hover:bg-gray-100 cursor-pointer"
                   aria-label="Back to login"
@@ -125,8 +138,20 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Fields */}
-            <div className="space-y-4">
+            {/* Error & Success Messages display beautifully here */}
+            {errorMessage && (
+              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100 text-center">
+                {errorMessage}
+              </div>
+            )}
+            {successMessage && (
+              <div className="bg-green-50 text-green-600 text-sm p-3 rounded-lg border border-green-100 text-center">
+                {successMessage}
+              </div>
+            )}
+
+            {/* FORM WRAPPER ADDED HERE */}
+            <form action={clientAction} className="space-y-4">
               {currentView === "register" && (
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm font-medium text-[#0A0A0A]">
@@ -134,7 +159,9 @@ export default function LoginPage() {
                   </Label>
                   <Input
                     id="name"
+                    name="name" // Required for backend
                     type="text"
+                    required
                     placeholder="Jane Smith"
                     className="h-12 border-gray-200 rounded-lg bg-white shadow-none focus-visible:ring-1"
                     style={{ "--tw-ring-color": HYPERBLUE } as React.CSSProperties}
@@ -148,7 +175,9 @@ export default function LoginPage() {
                 </Label>
                 <Input
                   id="email"
+                  name="email" // Required for backend
                   type="email"
+                  required
                   placeholder="user@company.com"
                   className="h-12 border-gray-200 rounded-lg bg-white shadow-none focus-visible:ring-1"
                   style={{ "--tw-ring-color": HYPERBLUE } as React.CSSProperties}
@@ -163,6 +192,8 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       id="password"
+                      name="password" // Required for backend
+                      required
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter password"
                       className="h-12 pr-10 border-gray-200 rounded-lg bg-white shadow-none focus-visible:ring-1"
@@ -193,6 +224,8 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword" // Required for backend
+                      required
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm password"
                       className="h-12 pr-10 border-gray-200 rounded-lg bg-white shadow-none focus-visible:ring-1"
@@ -221,6 +254,7 @@ export default function LoginPage() {
                     <input
                       type="checkbox"
                       id="remember"
+                      name="remember"
                       className="rounded border-gray-300 cursor-pointer"
                       style={{ accentColor: HYPERBLUE }}
                     />
@@ -229,27 +263,36 @@ export default function LoginPage() {
                     </Label>
                   </div>
                   <Button
+                    type="button"
                     variant="link"
                     className="p-0 h-auto text-sm hover:opacity-80 cursor-pointer"
                     style={{ color: HYPERBLUE }}
-                    onClick={() => setCurrentView("forgot")}
+                    onClick={() => {
+                      setCurrentView("forgot")
+                      setErrorMessage(null)
+                    }}
                   >
                     Forgot Your Password?
                   </Button>
                 </div>
               )}
-            </div>
 
-            {/* Primary CTA */}
-            <Button
-              onClick={handleAuth}
-              className="w-full h-12 text-sm font-semibold text-white hover:opacity-90 rounded-lg shadow-none cursor-pointer transition-opacity"
-              style={{ backgroundColor: HYPERBLUE }}
-            >
-              {currentView === "login" && "Log In"}
-              {currentView === "register" && "Create Account"}
-              {currentView === "forgot" && "Send Reset Link"}
-            </Button>
+              {/* Primary CTA now securely submits the form */}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 text-sm font-semibold text-white hover:opacity-90 rounded-lg shadow-none cursor-pointer transition-opacity mt-4"
+                style={{ backgroundColor: HYPERBLUE }}
+              >
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    {currentView === "login" && "Log In"}
+                    {currentView === "register" && "Create Account"}
+                    {currentView === "forgot" && "Send Reset Link"}
+                  </>
+                )}
+              </Button>
+            </form>
 
             {/* SSO divider + buttons */}
             {currentView !== "forgot" && (
@@ -267,8 +310,9 @@ export default function LoginPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <Button
+                    type="button"
                     variant="outline"
-                    onClick={handleAuth}
+                    onClick={() => signInWithOAuth('google')} // Added the onClick trigger here
                     className="h-12 border-gray-200 hover:bg-gray-50 rounded-lg bg-white shadow-none cursor-pointer"
                   >
                     <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -280,8 +324,9 @@ export default function LoginPage() {
                     Google
                   </Button>
                   <Button
+                    type="button"
                     variant="outline"
-                    onClick={handleAuth}
+                    onClick={() => signInWithOAuth('github')} // Added the onClick trigger here
                     className="h-12 border-gray-200 hover:bg-gray-50 rounded-lg bg-white shadow-none cursor-pointer"
                   >
                     <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -300,9 +345,13 @@ export default function LoginPage() {
                   {"Don't Have An Account? "}
                   <Button
                     variant="link"
+                    type="button"
                     className="p-0 h-auto text-sm font-semibold hover:opacity-80 cursor-pointer"
                     style={{ color: HYPERBLUE }}
-                    onClick={() => setCurrentView("register")}
+                    onClick={() => {
+                      setCurrentView("register")
+                      setErrorMessage(null)
+                    }}
                   >
                     Register Now.
                   </Button>
@@ -313,9 +362,13 @@ export default function LoginPage() {
                   {"Already Have An Account? "}
                   <Button
                     variant="link"
+                    type="button"
                     className="p-0 h-auto text-sm font-semibold hover:opacity-80 cursor-pointer"
                     style={{ color: HYPERBLUE }}
-                    onClick={() => setCurrentView("login")}
+                    onClick={() => {
+                      setCurrentView("login")
+                      setErrorMessage(null)
+                    }}
                   >
                     Sign In.
                   </Button>
@@ -326,9 +379,13 @@ export default function LoginPage() {
                   {"Remember Your Password? "}
                   <Button
                     variant="link"
+                    type="button"
                     className="p-0 h-auto text-sm font-semibold hover:opacity-80 cursor-pointer"
                     style={{ color: HYPERBLUE }}
-                    onClick={() => setCurrentView("login")}
+                    onClick={() => {
+                      setCurrentView("login")
+                      setErrorMessage(null)
+                    }}
                   >
                     Back to Login.
                   </Button>

@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check, Loader2 } from 'lucide-react'
+import { submitQuote } from '@/app/actions/quote' // Adjust this import path to match where you saved the action
 
 const steps = [
   {
@@ -41,14 +42,42 @@ export default function Quote() {
   const inView = useInView(ref, { once: true, margin: '-80px' })
   const [current, setCurrent] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
 
-  const handleChange = (name: string, value: string) =>
+  const handleChange = (name: string, value: string) => {
+    setErrorMsg(null)
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
 
-  const handleNext = () => {
-    if (current < steps.length - 1) setCurrent((c) => c + 1)
-    else setSubmitted(true)
+  const handleNext = async () => {
+    if (current < steps.length - 1) {
+      // Basic validation for the first step
+      if (current === 0 && (!formData.name || !formData.email)) {
+        setErrorMsg('Name and email are required to continue.')
+        return
+      }
+      setCurrent((c) => c + 1)
+    } else {
+      // Final Step: Submit Data
+      setIsSubmitting(true)
+      setErrorMsg(null)
+      
+      try {
+        const response = await submitQuote(formData)
+        
+        if (response.error) {
+          setErrorMsg(response.error)
+        } else {
+          setSubmitted(true)
+        }
+      } catch (err) {
+        setErrorMsg('An unexpected error occurred.')
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
   }
 
   return (
@@ -57,7 +86,6 @@ export default function Quote() {
       <div className="bg-[#0818A8] px-6 lg:px-10 py-24">
         <div className="max-w-7xl mx-auto text-center">
           <div ref={ref}>
-            {/* H2 — each line slides up and fades in independently */}
             <div className="overflow-hidden">
               <motion.h2
                 initial={{ y: '100%', opacity: 0 }}
@@ -151,6 +179,13 @@ export default function Quote() {
                     </span>
                   </div>
 
+                  {/* Error Message */}
+                  {errorMsg && (
+                    <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
+                      {errorMsg}
+                    </div>
+                  )}
+
                   {/* Fields */}
                   <div className="flex flex-col gap-5">
                     {steps[current].fields.map((field) => (
@@ -185,6 +220,7 @@ export default function Quote() {
                       <button
                         onClick={() => setCurrent((c) => c - 1)}
                         className="text-sm text-[#0A0A0A]/50 hover:text-[#0A0A0A] transition-colors"
+                        disabled={isSubmitting}
                       >
                         ← Back
                       </button>
@@ -192,13 +228,28 @@ export default function Quote() {
                       <span />
                     )}
                     <motion.button
-                      whileHover={{ scale: 1.03, boxShadow: '0 8px 30px rgba(8,24,168,0.35)' }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={!isSubmitting ? { scale: 1.03, boxShadow: '0 8px 30px rgba(8,24,168,0.35)' } : {}}
+                      whileTap={!isSubmitting ? { scale: 0.97 } : {}}
                       onClick={handleNext}
-                      className="flex items-center gap-2 bg-[#0818A8] text-white font-semibold px-7 py-3 rounded-full text-sm"
+                      disabled={isSubmitting}
+                      className="flex items-center gap-2 bg-[#0818A8] text-white font-semibold px-7 py-3 rounded-full text-sm disabled:opacity-70"
                     >
-                      {current === steps.length - 1 ? 'Submit Request' : 'Continue'}
-                      <ArrowRight size={14} />
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          Processing
+                        </>
+                      ) : current === steps.length - 1 ? (
+                        <>
+                          Submit Request
+                          <ArrowRight size={14} />
+                        </>
+                      ) : (
+                        <>
+                          Continue
+                          <ArrowRight size={14} />
+                        </>
+                      )}
                     </motion.button>
                   </div>
                 </motion.div>
