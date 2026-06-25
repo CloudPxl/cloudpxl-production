@@ -21,8 +21,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect the root if not logged in
-  if (!user && request.nextUrl.pathname !== '/login') {
+  // THE FIX: Allow unauthenticated access to BOTH /login and /auth/callback
+  if (
+    !user && 
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/auth/callback')
+  ) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -38,8 +42,9 @@ export const config = {
      * - favicon.ico (favicon file)
      * - sitemap.xml (SEO)
      * - robots.txt (SEO)
-     * Feel free to modify this pattern to include more paths.
+     * - auth/callback (OAuth Token Exchange)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // THE FIX: Added auth/callback to the exclusion regex
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
