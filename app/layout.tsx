@@ -62,9 +62,32 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Define the JSON-LD schema
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CloudPxl",
+    "operatingSystem": "Web application",
+    "applicationCategory": "BusinessApplication",
+    "description": "Enterprise infrastructure and concurrent workflow scaling for multi-tenant architectures.",
+    "url": "https://www.cloudpxl.com",
+    "publisher": {
+      "@type": "Organization",
+      "name": "CloudPxl",
+      "url": "https://www.cloudpxl.com",
+      "logo": "https://www.cloudpxl.com/icon.svg"
+    }
+  }
+
   return (
     <html lang="en" className={`${plusJakarta.variable} bg-[#F7F7F3]`}>
       <body className="font-sans antialiased bg-[#F7F7F3] text-[#0A0A0A]">
+        {/* Inject the Structured Data for Google */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
