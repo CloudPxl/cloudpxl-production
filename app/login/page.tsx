@@ -305,7 +305,7 @@ export default function LoginPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => signInWithOAuth('google', `${window.location.origin}/auth/callback`)}
+                    onClick={() => signInWithOAuth('google')}
                     className="h-12 border-gray-200 hover:bg-gray-50 rounded-lg bg-white shadow-none cursor-pointer"
                   >
                     <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -319,7 +319,7 @@ export default function LoginPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => signInWithOAuth('github', `${window.location.origin}/auth/callback`)}
+                    onClick={() => signInWithOAuth('github')}
                     className="h-12 border-gray-200 hover:bg-gray-50 rounded-lg bg-white shadow-none cursor-pointer"
                   >
                     <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

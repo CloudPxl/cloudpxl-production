@@ -71,13 +71,18 @@ export async function resetPassword(formData: FormData): Promise<AuthResponse> {
   return { success: 'Check your email for the reset link.' }
 }
 
-// THE FIX: Added callbackUrl parameter and mapped it to redirectTo
-export async function signInWithOAuth(provider: 'google' | 'github', callbackUrl: string) {
+// UPDATED: Removed callbackUrl parameter, hardcoded the redirect, and forced account selection
+export async function signInWithOAuth(provider: 'google' | 'github') {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: callbackUrl, 
+      // Absolute hardcode to bypass Vercel redirects
+      redirectTo: 'https://www.cloudpxl.com/auth/callback',
+      // Forces Google/GitHub to ask "Who are you?" every time
+      queryParams: {
+        prompt: 'select_account',
+      },
     },
   })
 
@@ -89,4 +94,11 @@ export async function signInWithOAuth(provider: 'google' | 'github', callbackUrl
   if (data.url) {
     redirect(data.url) 
   }
+}
+
+// ADDED: Use this function on your frontend "Log Out" button to completely kill the session
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
 }
