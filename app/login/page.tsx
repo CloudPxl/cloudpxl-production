@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
-// Added signInWithOAuth to the imports here
 import { login, signup, resetPassword, signInWithOAuth } from "./actions"
 
 const HYPERBLUE = "#0818A8"
@@ -16,12 +15,10 @@ export default function LoginPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentView, setCurrentView] = useState<"login" | "register" | "forgot">("login")
 
-  // Added states for database communication
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // This replaces the fake handleAuth function
   async function clientAction(formData: FormData) {
     setIsLoading(true)
     setErrorMessage(null)
@@ -138,7 +135,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Error & Success Messages display beautifully here */}
             {errorMessage && (
               <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100 text-center">
                 {errorMessage}
@@ -150,7 +146,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* FORM WRAPPER ADDED HERE */}
             <form action={clientAction} className="space-y-4">
               {currentView === "register" && (
                 <div className="space-y-2">
@@ -159,7 +154,7 @@ export default function LoginPage() {
                   </Label>
                   <Input
                     id="name"
-                    name="name" // Required for backend
+                    name="name"
                     type="text"
                     required
                     placeholder="Jane Smith"
@@ -175,7 +170,7 @@ export default function LoginPage() {
                 </Label>
                 <Input
                   id="email"
-                  name="email" // Required for backend
+                  name="email"
                   type="email"
                   required
                   placeholder="user@company.com"
@@ -192,7 +187,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       id="password"
-                      name="password" // Required for backend
+                      name="password"
                       required
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter password"
@@ -224,7 +219,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       id="confirmPassword"
-                      name="confirmPassword" // Required for backend
+                      name="confirmPassword"
                       required
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm password"
@@ -277,7 +272,6 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Primary CTA now securely submits the form */}
               <Button
                 type="submit"
                 disabled={isLoading}
@@ -294,7 +288,6 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* SSO divider + buttons */}
             {currentView !== "forgot" && (
               <>
                 <div className="relative">
@@ -312,7 +305,7 @@ export default function LoginPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => signInWithOAuth('google')} // Added the onClick trigger here
+                    onClick={() => signInWithOAuth('google', `${window.location.origin}/auth/callback`)}
                     className="h-12 border-gray-200 hover:bg-gray-50 rounded-lg bg-white shadow-none cursor-pointer"
                   >
                     <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -326,7 +319,7 @@ export default function LoginPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => signInWithOAuth('github')} // Added the onClick trigger here
+                    onClick={() => signInWithOAuth('github', `${window.location.origin}/auth/callback`)}
                     className="h-12 border-gray-200 hover:bg-gray-50 rounded-lg bg-white shadow-none cursor-pointer"
                   >
                     <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -338,7 +331,6 @@ export default function LoginPage() {
               </>
             )}
 
-            {/* View switcher */}
             <p className="text-center text-sm text-[#0A0A0A]/50">
               {currentView === "login" && (
                 <>
