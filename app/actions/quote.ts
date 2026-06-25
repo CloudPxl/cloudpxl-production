@@ -9,20 +9,30 @@ export async function submitQuote(formData: Record<string, string>) {
     return { error: 'Name and email are required.' }
   }
 
+  // 1. The Failsafe: Bypasses Vercel's environment drops by defining an absolute fallback.
+  // Ensure this is your exact receiving email address.
+  const ADMIN_EMAIL = process.env.SMTP_USER || 'cloudpxlsupport@gmail.com'
+  const SMTP_PASS = process.env.SMTP_PASSWORD
+
+  // 2. Password Check: Ensures the app password is being read correctly.
+  if (!SMTP_PASS) {
+    return { error: 'Server configuration error: SMTP password missing in environment.' }
+  }
+
   // Configure your SMTP transporter
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: process.env.SMTP_USER, // Your cloudpxlsupport@gmail.com
-      pass: process.env.SMTP_PASSWORD, // Your Google App Password
+      user: ADMIN_EMAIL,
+      pass: SMTP_PASS, 
     },
   })
 
-  // 1. Internal Notification (Sent to you)
+  // 3. Internal Notification (Sent to you)
   const internalMailOptions = {
-    from: process.env.SMTP_USER,
-    to: process.env.SMTP_USER, // Sending to yourself
-    replyTo: email, // Allows you to hit "Reply" and email the client directly
+    from: ADMIN_EMAIL,
+    to: ADMIN_EMAIL, // This is now guaranteed to never be undefined
+    replyTo: email, 
     subject: `🚨 New Lead: ${company || name} - CloudPxl`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px;">
@@ -41,10 +51,10 @@ export async function submitQuote(formData: Record<string, string>) {
     `,
   }
 
-  // 2. External Auto-Reply (Sent to the client)
+  // 4. External Auto-Reply (Sent to the client)
   const clientMailOptions = {
-    from: `"CloudPxl Engineering" <${process.env.SMTP_USER}>`,
-    to: email,
+    from: `"CloudPxl Engineering" <${ADMIN_EMAIL}>`,
+    to: email, // Mapped directly from the frontend form data
     subject: 'Request Received: CloudPxl Architecture Scope',
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #0A0A0A;">
@@ -71,14 +81,13 @@ export async function submitQuote(formData: Record<string, string>) {
   }
 
   try {
-    // Send both emails concurrently
+    // Send both emails concurrently to support the dual-notification flow
     await Promise.all([
       transporter.sendMail(internalMailOptions),
       transporter.sendMail(clientMailOptions)
     ])
     return { success: true }
   } catch (error: any) {
-    // This forces the actual Google error to show up on the frontend UI
     return { error: `Raw Error: ${error.message || 'Unknown SMTP error'}` }
   }
 }

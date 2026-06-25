@@ -10,9 +10,39 @@ const plusJakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'CloudPxl — Scalable Multi-Tenant Architecture',
-  description:
-    'We engineer concurrent workflows and enterprise-grade web applications for businesses scaling multiple products and massive customer bases.',
+  // SEO Entity Establishment
+  title: {
+    default: 'CloudPxl | Enterprise Infrastructure & Workflow Scaling',
+    template: '%s | CloudPxl'
+  },
+  description: 'Access your isolated tenant environment. Monitor your battle-tested stack, manage concurrent workflows, and scale your infrastructure with zero ambiguity.',
+  keywords: ['CloudPxl', 'Enterprise Architecture', 'Cloud Infrastructure', 'Concurrent Workflows', 'Multi-tenant Scaling'],
+  metadataBase: new URL('https://www.cloudpxl.com'),
+  
+  // Rich Sharing (Social Media / iMessage links)
+  openGraph: {
+    title: 'CloudPxl | Enterprise Infrastructure & Workflow Scaling',
+    description: 'Monitor your battle-tested stack and manage concurrent workflows.',
+    url: 'https://www.cloudpxl.com',
+    siteName: 'CloudPxl',
+    locale: 'en_US',
+    type: 'website',
+  },
+  
+  // Crawler Directives
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+
+  // Your Original Configuration
   generator: 'v0.app',
   icons: {
     icon: [
