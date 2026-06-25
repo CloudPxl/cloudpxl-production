@@ -71,13 +71,13 @@ export async function resetPassword(formData: FormData): Promise<AuthResponse> {
   return { success: 'Check your email for the reset link.' }
 }
 
-// Added the missing OAuth function here
-export async function signInWithOAuth(provider: 'google' | 'github') {
+// THE FIX: Added callbackUrl parameter and mapped it to redirectTo
+export async function signInWithOAuth(provider: 'google' | 'github', callbackUrl: string) {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+      redirectTo: callbackUrl, 
     },
   })
 
@@ -87,6 +87,6 @@ export async function signInWithOAuth(provider: 'google' | 'github') {
   }
 
   if (data.url) {
-    redirect(data.url) // This triggers the redirect to the provider's popup
+    redirect(data.url) 
   }
 }
