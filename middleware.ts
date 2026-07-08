@@ -1,6 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+const PROTECTED_PREFIXES = ['/dashboard', '/settings']
+
+function isProtectedRoute(pathname: string) {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  )
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
@@ -20,14 +28,16 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const { pathname } = request.nextUrl
 
-  // THE FIX: Allow unauthenticated access to BOTH /login and /auth/callback
-  if (
-    !user && 
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth/callback')
-  ) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!user && isProtectedRoute(pathname)) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('callbackUrl', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  if (user && pathname.startsWith('/login')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
@@ -44,7 +54,6 @@ export const config = {
      * - robots.txt (SEO)
      * - auth/callback (OAuth Token Exchange)
      */
-    // THE FIX: Added auth/callback to the exclusion regex
     '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

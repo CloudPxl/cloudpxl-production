@@ -109,26 +109,34 @@ export default function Navbar() {
 
             {/* The Dynamic Auth Section */}
             {user ? (
-              <div className="relative group">
-                {/* Avatar Bubble */}
-                <button className="w-10 h-10 rounded-full bg-[#0818A8]/10 border border-[#0818A8]/20 flex items-center justify-center text-[#0818A8] font-semibold text-sm transition-all duration-200 hover:bg-[#0818A8] hover:text-white cursor-pointer">
-                  {user.email?.charAt(0).toUpperCase() ?? 'U'}
-                </button>
-                
-                {/* Hover Dropdown */}
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-black/5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
-                  <div className="px-4 py-3 border-b border-black/5">
-                    <p className="text-xs text-[#0A0A0A]/50 font-medium uppercase tracking-wider mb-1">Authenticated</p>
-                    <p className="text-sm font-medium text-[#0A0A0A] truncate">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors mt-1"
-                  >
-                    Sign Out
+              <>
+                <a
+                  href="/dashboard"
+                  className="text-sm font-medium text-[#0A0A0A]/70 hover:text-[#0818A8] transition-colors duration-200 tracking-tight"
+                >
+                  Dashboard
+                </a>
+                <div className="relative group">
+                  {/* Avatar Bubble */}
+                  <button className="w-10 h-10 rounded-full bg-[#0818A8]/10 border border-[#0818A8]/20 flex items-center justify-center text-[#0818A8] font-semibold text-sm transition-all duration-200 hover:bg-[#0818A8] hover:text-white cursor-pointer">
+                    {user.email?.charAt(0).toUpperCase() ?? 'U'}
                   </button>
+
+                  {/* Hover Dropdown */}
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-black/5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
+                    <div className="px-4 py-3 border-b border-black/5">
+                      <p className="text-xs text-[#0A0A0A]/50 font-medium uppercase tracking-wider mb-1">Authenticated</p>
+                      <p className="text-sm font-medium text-[#0A0A0A] truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors mt-1"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </>
             ) : (
               <a
                 href="/login"
@@ -185,12 +193,20 @@ export default function Navbar() {
             </button>
 
             {user ? (
-              <button
-                onClick={handleSignOut}
-                className="mt-2 bg-red-50 text-red-600 text-sm font-semibold px-5 py-2.5 rounded-full w-full hover:bg-red-100 transition-colors"
-              >
-                Sign Out
-              </button>
+              <>
+                <a
+                  href="/dashboard"
+                  className="mt-2 text-center border border-[#0818A8]/20 text-[#0818A8] text-sm font-semibold px-5 py-2.5 rounded-full w-full hover:bg-[#0818A8]/5 transition-colors"
+                >
+                  Dashboard
+                </a>
+                <button
+                  onClick={handleSignOut}
+                  className="mt-2 bg-red-50 text-red-600 text-sm font-semibold px-5 py-2.5 rounded-full w-full hover:bg-red-100 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
             ) : (
               <a
                 href="/login"

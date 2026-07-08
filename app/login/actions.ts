@@ -6,10 +6,18 @@ import { createClient } from '../../utils/supabase/server'
 
 export type AuthResponse = { error?: string; success?: string }
 
+function getSafeRedirectPath(callbackUrl: string | null): string {
+  if (!callbackUrl || !callbackUrl.startsWith('/') || callbackUrl.startsWith('//')) {
+    return '/dashboard'
+  }
+  return callbackUrl
+}
+
 export async function login(formData: FormData): Promise<AuthResponse> {
   const supabase = await createClient()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const callbackUrl = formData.get('callbackUrl') as string | null
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -22,7 +30,7 @@ export async function login(formData: FormData): Promise<AuthResponse> {
   }
 
   revalidatePath('/', 'layout')
-  redirect('/') 
+  redirect(getSafeRedirectPath(callbackUrl))
 }
 
 export async function signup(formData: FormData): Promise<AuthResponse> {

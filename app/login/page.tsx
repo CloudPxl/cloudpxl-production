@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +11,10 @@ import { login, signup, resetPassword, signInWithOAuth } from "./actions"
 
 const HYPERBLUE = "#0818A8"
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") ?? ""
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentView, setCurrentView] = useState<"login" | "register" | "forgot">("login")
@@ -147,6 +151,9 @@ export default function LoginPage() {
             )}
 
             <form action={clientAction} className="space-y-4">
+              {currentView === "login" && (
+                <input type="hidden" name="callbackUrl" value={callbackUrl} />
+              )}
               {currentView === "register" && (
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm font-medium text-[#0A0A0A]">
@@ -388,5 +395,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F7F7F3]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0818A8]" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }

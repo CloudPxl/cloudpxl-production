@@ -5,8 +5,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // We use the 'next' parameter if it exists, otherwise default to the root dashboard
-  const next = searchParams.get('next') ?? '/'
+  const nextParam = searchParams.get('next')
+  const next =
+    nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+      ? nextParam
+      : '/dashboard'
 
   if (code) {
     const supabase = await createClient()
