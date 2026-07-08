@@ -8,7 +8,7 @@ export type AuthResponse = { error?: string; success?: string }
 
 function getSafeRedirectPath(callbackUrl: string | null): string {
   if (!callbackUrl || !callbackUrl.startsWith('/') || callbackUrl.startsWith('//')) {
-    return '/dashboard'
+    return '/'
   }
   return callbackUrl
 }
